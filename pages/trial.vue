@@ -29,15 +29,16 @@
           </div>
         </div>
         <div class="input-grp3" style="position: relative; left: 0.7vw">
-          <select class="dropdowncountry" v-model="selectedCountry" @click="getCountryInfo" >
-  <option value="" disabled selected>country</option>
-  <option v-for="country in selectedCountry" :key="country.id">
-    {{ country.id.name }}
+          <select class="dropdowncountry" v-model="selectedCountry" :items="countries" @click="getCountryInfo">
+  <option value="" disabled selected></option>
+  <option v-for="country in countries" :key="country.id" :value="country.name">
+    {{ country.name }}
   </option>
 </select>
+
           <div class="phone">
-            <input type="text" placeholder="flag" class="flag" style="width: 55px; position: relative; left:2.5vw; margin-right: 33px; padding-left: 7px"/>
-            <input type="phone" v-model="phone" placeholder="Ph no" style="width: 60%"/>
+            <img :src="getFlag(selectedCountry)" class="flag" style="width: 55px; position: relative; left: 2.5vw; margin-right: 33px;" />
+            <input type="phone" v-model="formattedPhoneNumber" :placeholder="'' + getPhoneCode(selectedCountry) + ' Ph no'" style="width: 60%" />
           </div>
         </div>
         <div class="input-grp2">
@@ -64,23 +65,32 @@
         <div class="message">
           <textarea v-model="message" placeholder="Specialremarks"></textarea>
         </div>
-        <button type="button" @click="submitForm">Submit</button>
+        <button type="button" >Submit</button>
+        
       </div>
-      <client-only placeholder="loading...">
+      <!-- <client-only>
+    <Popup v-if="isPopupVisible" />
+  </client-only> -->
+      <!-- <client-only placeholder="loading...">
         <script>
           let dob = (document.getElementById("dob").value = "");
-          console.log("qwert", dob);
+          // console.log("qwert", dob);
         </script>
-      </client-only>
+      </client-only> -->
     </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
+
 export default {
+  // components: {
+  //   Popup,
+  // },
   data() {
     return {
+      // isPopupVisible: false,
       isLoginVisible: false,
       firstName: '',
       lastName: '',
@@ -88,20 +98,45 @@ export default {
       dob: '',
       gender: '',
       selectedCountry: [],
+      countries:[],
       flag:[],
       digitalCode:[],
-      phone: 'digitalCode' +'',
+      formattedPhoneNumber:'',
       referenceoptn: '',
       language: '',
       message: '',
     };
   },
+  mounted(){
+      this.getCountryInfo();
+  },
+  computed: {
+  formattedPhoneNumber: {
+    get() {
+      return this.phone;
+    },
+    set(value) {
+      const code = this.getPhoneCode(this.selectedCountry);
+      const phone = value.replace('' + code, '').trim(); // removing the code from the input value
+      this.phone = phone;
+    },
+  },
+},
+
+
+
+
+
+
+
   methods: {
     toggleLoginForm() {
       this.isLoginVisible = !this.isLoginVisible;
     },
       
-
+    openPopup() {
+      this.isPopupVisible = true;
+    },
 
 
 
@@ -110,35 +145,34 @@ export default {
       try {
     const response = await axios.get('http://192.168.1.73:3000/api/reistrations/countrieslist');
     const countryData = response.data;
-    this.selectedCountry = countryData;
-    const countryNames = countryData.map(country => country.name)
-    this.selectedCountry = countryNames;
-    const flags=countryData.map(country=> country.flag)
-    this.flag=flags;
-    const code= countryData.map(country=> country.phonecode)
-    this.digitalCode=code;
-    console.log(countryNames)
-    console.log(flags);
-    console.log(code);
-    
-    this.updateCountryInfo();
+    this.countries = countryData;
+    this.countryNames = countryData.map((country) => country.name);
+    this.flags = countryData.map((country) => country.flag);
+    this.digitalCodes = countryData.map(country=> country.phonecode)
+    // console.log(this.countryNames);
+    // console.log(this.flags);
+    // console.log(this.digitalCodes);
+ 
   } catch (error) {
     console.error('Error fetching country information', error);
     throw error;
   }
 },
-updateCountryInfo() {
-    // Assuming you have the selected country stored in this.selectedCountry
-    const selectedCountry = this.selectedCountry;
-    // Retrieve the corresponding flag and digital code
-    const flag = selectedCountry.flags; // Assuming this is the correct property for the flag
-    const digitalCode = selectedCountry.phonecode; // Assuming this is the correct property for the digital code
 
-    // Update the data properties accordingly
-    this.flag = flag;
-    this.digitalCode = digitalCode;
+getFlag(selectedCountry) {
+    const index = this.countryNames ? this.countryNames.indexOf(selectedCountry) : -1;
+    if (index !== -1 && this.flags && this.flags.length > index) {
+      return this.flags[index];
+    }
+    return '';
   },
-    
+  getPhoneCode(selectedCountry) {
+    const index = this.countryNames ? this.countryNames.indexOf(selectedCountry) : -1;
+    if (index !== -1 && this.digitalCodes && this.digitalCodes.length > index) {
+      return this.digitalCodes[index];
+    }
+    return '';
+  },
     async submitForm() {
       const formData = {
         firstName: this.firstName,
@@ -417,6 +451,6 @@ updateCountryInfo() {
   padding-left: 20px;
   box-sizing: border-box;
   position: relative;
-  top: -20vh;
+  top: -8vh;
 }
 </style>

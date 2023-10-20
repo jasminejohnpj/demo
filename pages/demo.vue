@@ -43,7 +43,11 @@
             class = "flag"
             style = "width:55px;padding-left:7px"
             
-          />
+          /><input
+            type="phone"
+            v-model="phone"
+            placeholder="Ph no"
+            style = "width:55px; "    />
           <input
             type="phone"
             v-model="phone"
